@@ -15,7 +15,7 @@ function M.new(settings, onCapture)
     local size = settings.panelSize or 200
     local box = theme.panel(parent, size, size)
     box.hidden = settings.hideUI == true
-    local title = theme.text(box, "Amascut Altars", 12, 8, size - 24, 24, true)
+    local title = theme.text(box, "Amascut Statues", 12, 8, size - 24, 24, true)
     title:AlignTo(ui.AlignMode.CENTRE)
     require("src/drag").attach(title,box,parent,settings,"panelX","panelY")
     local currentRows, worldLabels, rowViews = {}, {}, {}

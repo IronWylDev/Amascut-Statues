@@ -11,11 +11,10 @@ function M.new(parent,settings,onChange,width,maxHeight,onClose)
         counts[page] = counts[page] + 1
         optionPages[i],optionRows[i] = page,counts[page]
     end
-    local rowHeight = math.floor((height-header-footer)/math.max(counts[1],counts[2]))
     local root = theme.panel(parent,width,height)
     local identity = theme.identity(root)
-    local title = theme.text(root,"Altar settings",16,10,width-(onClose and 100 or 32),25,true)
-    local notice = theme.text(root,"Changes are saved on this device.",12,height-27,width-24,20)
+    local title = theme.text(root,"Statue settings",16,10,width-(onClose and 100 or 32),25,true)
+    local notice = theme.text(root,"",12,height-27,width-24,20)
     local controls,parts,previous = {},{},{}
     local page = 1
     local function refresh()
@@ -40,27 +39,35 @@ function M.new(parent,settings,onChange,width,maxHeight,onClose)
     local function apply(option,value)
         settings[option.key] = preferences.validate(option.key,value)
         local saved = preferences.save(settings,option.key)
-        notice.content = saved and "Saved on this device." or "Applied; could not save on this device."
+        notice.content = saved and "" or "Applied; could not save on this device."
         refresh(); onChange()
     end
     for i,option in ipairs(preferences.options) do
         local row = optionRows[i]
+        local rowHeight = math.min(44,math.floor((height-header-footer)/counts[optionPages[i]]))
         local y = header+(row-1)*rowHeight
-        local background = theme.rectangle(root,8,y,width-16,rowHeight-4,
+        local background = theme.rectangle(root,8,y+2,width-16,rowHeight-4,
             row%2 == 1 and theme.colours.row or theme.colours.alternate)
         local isLabel = optionPages[i] == 2
         local controlWidth = isLabel and 122 or 58
-        local name = theme.text(root,option.label,16,y,width-controlWidth-42,rowHeight-4)
-        local x,cy = width-controlWidth-16,y+math.max(0,math.floor((rowHeight-28)/2))
+        local name = theme.text(root,option.label,16,y+2,width-controlWidth-42,rowHeight-4)
+        local isInput = option.kind == "String" and not option.choices
+        local controlHeight = math.min(isInput and 32 or 28,rowHeight-4)
+        local x,cy = width-controlWidth-16,y+math.floor((rowHeight-controlHeight)/2)
         local control
-        if option.kind == "String" and not option.choices then
+        if isInput then
             control = ui.InputField.new(root)
-            control:SetPos(x,cy); control:SetSize(controlWidth,math.min(28,rowHeight-4))
+            control:SetPos(x,cy); control:SetSize(controlWidth,controlHeight)
             control:Setup(ui.TextContentVisibilityMode.VISIBLE,ui.InputFieldFilterMode.NONE,24)
             control.stylesheetID = id.StyleSheet.INPUT_DEFAULT
             control.enabled = true; control.clickthrough = false
             control.text.font = id.Font.MUSEO_SANS_13PT_REGULAR or id.Font.MUSEO_SANS_15PT_REGULAR
             control.text.rgba = theme.colours.white
+            control.text.alignVertical = ui.AlignMode.CENTRE
+            control.contentMargin.left = 6
+            control.contentMargin.right = 6
+            control.contentMargin.top = 2
+            control.contentMargin.bottom = 2
             control.content = settings[option.key] or option.default
             control:Subscribe(ui.Hook.ONCONTENTCHANGED,function(c,cause,content)
                 local result = ui.InputFieldActionResult
@@ -69,7 +76,7 @@ function M.new(parent,settings,onChange,width,maxHeight,onClose)
                 elseif cause == result.SUBMIT_ON_ESCAPE then c.content = settings[option.key] end
             end)
         else
-            control = theme.button(root,"",x,cy,controlWidth,math.min(28,rowHeight-4),function()
+            control = theme.button(root,"",x,cy,controlWidth,controlHeight,function()
                 if option.choices then
                     local nextIndex = 1
                     for j,choice in ipairs(option.choices) do
